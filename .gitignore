@@ -1,0 +1,25 @@
+# ── Dependencies ────────────────────────────────────────────────────
+node_modules/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# ── Environment & Secrets ──────────────────────────────────────────
+.env
+
+# ── Build Outputs ──────────────────────────────────────────────────
+client/dist/
+server/workspace/
+server/temp/
+.coverage
+
+# ── OS / IDE ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+*.swo
+
+# ── Binaries ───────────────────────────────────────────────────────
+tectonic.exe

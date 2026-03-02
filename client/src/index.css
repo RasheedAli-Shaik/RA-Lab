@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------ */
+/*  Base layer — dark IDE theme defaults                        */
+/* ------------------------------------------------------------ */
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full m-0 p-0;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  }
+
+  * {
+    @apply border-slate-700/60;
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+  ::-webkit-scrollbar-corner {
+    @apply bg-slate-900;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/*  CodeMirror overrides — fill container                       */
+/* ------------------------------------------------------------ */
+.cm-editor {
+  height: 100% !important;
+  font-family: 'Source Code Pro', monospace !important;
+  font-size: 14px !important;
+}
+
+.cm-editor .cm-scroller {
+  overflow: auto !important;
+  font-family: 'Source Code Pro', monospace !important;
+}
+
+.cm-editor .cm-gutters {
+  border-right: 1px solid rgba(51, 65, 85, 0.5) !important;
+  background-color: #0c1222 !important;
+}
+
+.cm-editor .cm-activeLineGutter {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+.cm-editor .cm-activeLine {
+  background-color: rgba(30, 41, 59, 0.4) !important;
+}
+
+/* ------------------------------------------------------------ */
+/*  Panel resize handles                                        */
+/* ------------------------------------------------------------ */
+[data-panel-resize-handle-id] {
+  transition: background-color 0.15s ease;
+}
+
+[data-panel-resize-handle-id]:hover,
+[data-panel-resize-handle-id][data-resize-handle-active] {
+  background-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+/* ------------------------------------------------------------ */
+/*  Utility animations                                          */
+/* ------------------------------------------------------------ */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #0f172a;
+  }
+}
