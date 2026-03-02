@@ -22,9 +22,7 @@ fileManager.initializeWorkspace().catch((err) => {
   console.error('[FileManager] workspace init failed:', err.message);
 });
 
-/* ------------------------------------------------------------------ */
 /*  POST /api/document/save                                           */
-/* ------------------------------------------------------------------ */
 router.post('/save', async (req, res, next) => {
   try {
     const { code, filename } = req.body;
@@ -49,9 +47,7 @@ router.post('/save', async (req, res, next) => {
   }
 });
 
-/* ------------------------------------------------------------------ */
 /*  GET /api/document/load?filename=...                               */
-/* ------------------------------------------------------------------ */
 router.get('/load', async (req, res, next) => {
   try {
     const { filename } = req.query;
@@ -78,9 +74,7 @@ router.get('/load', async (req, res, next) => {
   }
 });
 
-/* ------------------------------------------------------------------ */
 /*  GET /api/document/list                                            */
-/* ------------------------------------------------------------------ */
 router.get('/list', async (_req, res, next) => {
   try {
     const documents = await fileManager.listDocuments();
@@ -95,9 +89,7 @@ router.get('/list', async (_req, res, next) => {
   }
 });
 
-/* ------------------------------------------------------------------ */
 /*  DELETE /api/document/delete?filename=...                          */
-/* ------------------------------------------------------------------ */
 router.delete('/delete', async (req, res, next) => {
   try {
     const { filename } = req.query;
@@ -124,11 +116,8 @@ router.delete('/delete', async (req, res, next) => {
   }
 });
 
-/* ------------------------------------------------------------------ */
 /*  PATCH /api/document/patch                                         */
 /*  Body: { filename?, find, replace }                                */
-/*  Designed for integration with a future FastAPI coding-agent.      */
-/* ------------------------------------------------------------------ */
 router.patch('/patch', async (req, res, next) => {
   try {
     const { filename = 'document.tex', find, replace } = req.body;
@@ -169,10 +158,8 @@ router.patch('/patch', async (req, res, next) => {
   }
 });
 
-/* ------------------------------------------------------------------ */
 /*  GET /api/document/pdf                                             */
 /*  Serves the latest compiled PDF as application/pdf.                */
-/* ------------------------------------------------------------------ */
 router.get('/pdf', async (_req, res, next) => {
   try {
     const pdfPath = await fileManager.getCompiledPdfPath();

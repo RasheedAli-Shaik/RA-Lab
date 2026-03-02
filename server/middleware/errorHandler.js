@@ -1,5 +1,5 @@
 /**
- * Centralised error-handling middleware for the RA-Lab backend.
+ * Middleware for the RA-Lab backend.
  *
  * Provides:
  *  - AppError   — operational error class with HTTP status codes
@@ -23,16 +23,13 @@ class AppError extends Error {
   }
 }
 
-/**
- * Express error-handling middleware.
- * Must have the (err, req, res, next) signature.
- */
+
 const errorHandler = (err, req, res, _next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
   let details = err.details || null;
 
-  // ---- Logging ----
+  // Logging 
   console.error(
     `[ERROR] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`
   );
@@ -42,7 +39,7 @@ const errorHandler = (err, req, res, _next) => {
     console.error(`  Stack  : ${err.stack}`);
   }
 
-  // ---- Map well-known Node / Express errors ----
+  // Map well-known Node / Express errors 
   if (err.code === 'ENOENT') {
     statusCode = 404;
     message = 'Requested resource not found on disk';
@@ -57,7 +54,7 @@ const errorHandler = (err, req, res, _next) => {
     message = 'Request payload too large (limit: 10 MB)';
   }
 
-  // Never leak internal details for unexpected (non-operational) 500s
+  // Leak Prevetion
   if (statusCode === 500 && !err.isOperational) {
     message = 'An unexpected internal error occurred. Please try again later.';
     details = null;
@@ -74,9 +71,7 @@ const errorHandler = (err, req, res, _next) => {
   });
 };
 
-/**
- * Catch-all middleware for routes that don't match any handler.
- */
+
 const notFoundHandler = (req, _res, next) => {
   next(new AppError(`Route ${req.method} ${req.originalUrl} not found`, 404));
 };

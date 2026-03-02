@@ -26,7 +26,7 @@ router.post('/', async (req, res, next) => {
   try {
     const { code } = req.body;
 
-    // ---- Input validation ----
+    // Input validation
     if (code === undefined || code === null) {
       throw new AppError(
         'Missing required field "code". Please send a JSON body with { "code": "<latex source>" }.',
@@ -48,7 +48,7 @@ router.post('/', async (req, res, next) => {
       );
     }
 
-    // ---- Compile ----
+    // Compile
     const result = await compiler.compile(code);
 
     return res.json({

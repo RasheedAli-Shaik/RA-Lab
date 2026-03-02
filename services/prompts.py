@@ -1,9 +1,5 @@
 """
-System prompts for the RA-Lab Coding Agent.
-
-These are purpose-built for the FastAPI agent layer which sits between
-the React frontend and Gemini.  They are more structured than the
-single-turn prompts used by the Node.js /api/ai helper.
+System prompt for the RA-Lab Coding Agent.
 """
 
 AGENT_SYSTEM_PROMPT = """\

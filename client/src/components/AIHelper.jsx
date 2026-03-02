@@ -14,9 +14,6 @@ import {
   GitMerge,
 } from 'lucide-react';
 
-/* ------------------------------------------------------------------ */
-/*  Edit block parser                                                  */
-/* ------------------------------------------------------------------ */
 /**
  * Parse AI response text for <<<SUGGESTED_EDIT>>> blocks.
  * Returns an array of segments:
@@ -62,11 +59,6 @@ function parseResponseSegments(text) {
   return segments;
 }
 
-/**
- * AI-powered LaTeX helper panel with code-edit capabilities.
- * Chat-style interface that sends queries to the Gemini-backed API.
- * Parses SUGGESTED_EDIT blocks and provides Accept/Reject buttons.
- */
 export default function AIHelper({ messages, onSendQuery, onApplyEdit, isLoading }) {
   const [input, setInput] = useState('');
   const [appliedEdits, setAppliedEdits] = useState(new Set());
@@ -223,15 +215,12 @@ export default function AIHelper({ messages, onSendQuery, onApplyEdit, isLoading
   );
 }
 
-/* ── Internal helpers ────────────────────────────────────────────── */
-
 function MessageBubble({ message, msgIdx, appliedEdits, rejectedEdits, onAcceptEdit, onRejectEdit }) {
   const { role, content } = message;
 
   const isUser = role === 'user';
   const isError = role === 'error';
 
-  // Parse assistant messages for edit blocks
   const segments = role === 'assistant'
     ? parseResponseSegments(content)
     : [{ type: 'text', content }];

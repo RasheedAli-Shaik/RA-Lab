@@ -17,9 +17,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-/* ------------------------------------------------------------------ */
-/*  Edit block parser (same format as AIHelper)                       */
-/* ------------------------------------------------------------------ */
 const EDIT_RE =
   /<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\n?([\s\S]*?)<<<REPLACE>>>\n?([\s\S]*?)<<<END_EDIT>>>/g;
 
@@ -52,9 +49,6 @@ function parseSegments(text) {
   return segments;
 }
 
-/* ------------------------------------------------------------------ */
-/*  AgentPanel Component                                               */
-/* ------------------------------------------------------------------ */
 export default function AgentPanel({ code, logs, onApplyEdit }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -279,8 +273,6 @@ export default function AgentPanel({ code, logs, onApplyEdit }) {
     </div>
   );
 }
-
-/* ── Helpers ─────────────────────────────────────────────────────── */
 
 const PLACEHOLDERS = {
   chat: 'Chat with the agent…',

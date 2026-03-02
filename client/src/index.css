@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------ */
-/*  Base layer — dark IDE theme defaults                        */
-/* ------------------------------------------------------------ */
 @layer base {
   html,
   body,

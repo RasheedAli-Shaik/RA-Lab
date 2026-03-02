@@ -7,10 +7,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-/**
- * Compilation log panel.
- * Renders raw tectonic output with color-coded error/warning lines.
- */
 export default function LogPanel({ logs, errors = [], warnings = [] }) {
   const scrollRef = useRef(null);
 
@@ -66,7 +62,7 @@ export default function LogPanel({ logs, errors = [], warnings = [] }) {
   );
 }
 
-/* ── Individual log line with colour coding ─────────────────────── */
+/* Individual log line colour coding  */
 
 function LogLine({ line }) {
   if (!line.trim()) return null;

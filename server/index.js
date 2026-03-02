@@ -1,13 +1,3 @@
-/**
- * RA-Lab Server — Entry Point
- *
- * Express application that provides:
- *  • /api/compile   — LaTeX compilation via tectonic
- *  • /api/document  — Document CRUD & PDF serving
- *  • /api/agent     — Proxy to FastAPI coding agent (Gemini AI)
- *  • /api/health    — Health check
- */
-
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -24,9 +14,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-/* ------------------------------------------------------------------ */
 /*  Bootstrap directories                                             */
-/* ------------------------------------------------------------------ */
 const dirs = [
   path.join(__dirname, 'workspace'),
   path.join(__dirname, 'workspace', 'documents'),
@@ -37,9 +25,8 @@ dirs.forEach((dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-/* ------------------------------------------------------------------ */
+
 /*  Middleware                                                        */
-/* ------------------------------------------------------------------ */
 app.use(
   cors({
     origin: [
@@ -68,9 +55,8 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ------------------------------------------------------------------ */
+
 /*  Routes                                                            */
-/* ------------------------------------------------------------------ */
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'healthy',
@@ -85,15 +71,12 @@ app.use('/api/compile', compileRoutes);
 app.use('/api/document', documentRoutes);
 app.use('/api/agent', agentRoutes);
 
-/* ------------------------------------------------------------------ */
+
 /*  Error handling                                                    */
-/* ------------------------------------------------------------------ */
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-/* ------------------------------------------------------------------ */
 /*  Graceful shutdown                                                 */
-/* ------------------------------------------------------------------ */
 process.on('SIGTERM', () => {
   console.log('\nSIGTERM received — shutting down gracefully.');
   process.exit(0);
@@ -110,17 +93,15 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[WARN] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-/* ------------------------------------------------------------------ */
 /*  Start                                                             */
-/* ------------------------------------------------------------------ */
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════╗
-║            RA-Lab Server v1.0.0                ║
+║            RA-Lab Server v1.0.0               ║
 ║         LaTeX Workshop IDE Backend            ║
 ╠═══════════════════════════════════════════════╣
-║  Server :  http://localhost:${PORT}               ║
-║  Health :  http://localhost:${PORT}/api/health     ║
+║  Server :  http://localhost:${PORT}           ║
+║  Health :  http://localhost:${PORT}/api/health║
 ╚═══════════════════════════════════════════════╝
   `);
 });

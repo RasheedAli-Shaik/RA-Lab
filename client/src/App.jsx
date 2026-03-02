@@ -11,9 +11,6 @@ import AIHelper from './components/AIHelper';
 import AgentPanel from './components/AgentPanel';
 import StatusBar from './components/StatusBar';
 
-/* ------------------------------------------------------------------ */
-/*  Default LaTeX template                                            */
-/* ------------------------------------------------------------------ */
 const DEFAULT_TEMPLATE = `\\documentclass{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage{amsmath}
@@ -59,9 +56,6 @@ Start editing this document and click \\textbf{Compile} to see your PDF!
 \\end{document}
 `;
 
-/* ------------------------------------------------------------------ */
-/*  Toast configuration                                               */
-/* ------------------------------------------------------------------ */
 const TOAST_OPTIONS = {
   style: {
     background: '#1e293b',
@@ -80,9 +74,6 @@ const TOAST_OPTIONS = {
   },
 };
 
-/* ------------------------------------------------------------------ */
-/*  App                                                                */
-/* ------------------------------------------------------------------ */
 export default function App() {
   // ---- State ----
   const [code, setCode] = useState(DEFAULT_TEMPLATE);
@@ -99,7 +90,7 @@ export default function App() {
   const [aiMessages, setAiMessages] = useState([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  // ---- Compile ----
+  // Compile 
   const handleCompile = useCallback(async () => {
     if (isCompiling) return;
     setIsCompiling(true);
@@ -144,7 +135,7 @@ export default function App() {
     }
   }, [code, isCompiling]);
 
-  // ---- Save ----
+  // Save 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -166,7 +157,7 @@ export default function App() {
     }
   }, [code, fileName, isSaving]);
 
-  // ---- AI query (routed through FastAPI agent) ----
+  // AI query (routing through FastAPI agent) 
   const handleAIQuery = useCallback(
     async (query) => {
       setIsAiLoading(true);
@@ -211,7 +202,7 @@ export default function App() {
     [compilationLogs, code, aiMessages]
   );
 
-  // ---- Apply AI-suggested edit to the editor ----
+  // Apply AI-suggested edit to the editor 
   const handleApplyEdit = useCallback(
     (find, replace) => {
       if (!code.includes(find)) {
@@ -225,7 +216,7 @@ export default function App() {
     [code]
   );
 
-  // ---- Keyboard shortcuts ----
+  // Keyboard shortcuts 
   useEffect(() => {
     const onKeyDown = (e) => {
       // Ctrl/Cmd + S → Save
@@ -243,7 +234,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [handleSave, handleCompile]);
 
-  // ---- Render ----
+  // Render
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100">
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
@@ -353,9 +344,7 @@ export default function App() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Small helper: tab button                                          */
-/* ------------------------------------------------------------------ */
+
 function TabButton({ active, onClick, icon, label, badge, badgeColor }) {
   return (
     <button

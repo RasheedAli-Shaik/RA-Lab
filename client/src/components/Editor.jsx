@@ -5,10 +5,6 @@ import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { Code2 } from 'lucide-react';
 
-/**
- * LaTeX code editor panel built on CodeMirror 6.
- * Provides syntax highlighting, line numbers, bracket matching, and more.
- */
 export default function Editor({ code, onChange, onCursorChange }) {
   // Define LaTeX language support once
   const extensions = useMemo(() => [StreamLanguage.define(stex)], []);
@@ -20,7 +16,6 @@ export default function Editor({ code, onChange, onCursorChange }) {
     [onChange]
   );
 
-  // Track cursor position from editor view updates
   const handleUpdate = useCallback(
     (viewUpdate) => {
       if (viewUpdate.selectionSet && onCursorChange) {

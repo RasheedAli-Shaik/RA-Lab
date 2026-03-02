@@ -1,10 +1,6 @@
 import React from 'react';
 import { FileCode2, Cpu } from 'lucide-react';
 
-/**
- * Minimal status bar at the very bottom of the IDE.
- * Shows cursor position, filename, engine, and compilation status.
- */
 export default function StatusBar({
   cursorPosition,
   compilationStatus,

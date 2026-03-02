@@ -8,10 +8,6 @@ import {
   Keyboard,
 } from 'lucide-react';
 
-/**
- * Top toolbar for the RA-Lab IDE.
- * Contains brand, filename editor, action buttons.
- */
 export default function Toolbar({
   fileName,
   onFileNameChange,
@@ -35,7 +31,7 @@ export default function Toolbar({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
+    } catch (err) {
       // Silently fail — button is only shown when pdfUrl exists
     }
   };
@@ -134,7 +130,7 @@ export default function Toolbar({
   );
 }
 
-/* ── Small internal components ───────────────────────────────────── */
+/* Small internal components */
 
 function Separator() {
   return <div className="h-5 w-px bg-slate-700/60 mx-1" />;

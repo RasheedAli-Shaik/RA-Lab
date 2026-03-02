@@ -1,16 +1,3 @@
-/**
- * CompilerService
- *
- * Orchestrates the full LaTeX compilation lifecycle:
- *  1. Create a unique temporary directory.
- *  2. Write the incoming LaTeX source to a .tex file.
- *  3. Spawn the `tectonic` binary.
- *  4. Capture stdout / stderr (compilation logs).
- *  5. Copy the resulting PDF to persistent output storage.
- *  6. Clean up temporary files.
- *  7. Return structured results (logs, errors, warnings, PDF availability).
- */
-
 const { spawn } = require('child_process');
 const fs = require('fs/promises');
 const path = require('path');
@@ -19,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const TEMP_DIR = path.join(__dirname, '..', 'temp');
 const OUTPUT_DIR = path.join(__dirname, '..', 'workspace', 'output');
 
-// Absolute path to the tectonic binary (installed in project root)
+// Absolute path to the tectonic binary
 const TECTONIC_BIN = path.join(__dirname, '..', '..', 'tectonic.exe');
 
 // Maximum time (ms) we allow a single tectonic run.
@@ -116,10 +103,7 @@ class CompilerService {
     });
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Private helpers                                                    */
-  /* ------------------------------------------------------------------ */
-
+  /*  Private helpers */
   /** Ensure temp and output directories exist. */
   async _ensureDirectories() {
     await fs.mkdir(TEMP_DIR, { recursive: true });

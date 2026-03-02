@@ -1,10 +1,6 @@
 import React from 'react';
 import { FileText, Loader2, Eye } from 'lucide-react';
 
-/**
- * PDF preview panel.
- * Uses an <object> tag with embedded PDF viewer for reliable inline display.
- */
 export default function PdfViewer({ pdfUrl, isCompiling }) {
   return (
     <div className="h-full flex flex-col bg-[#1a1a2e]">

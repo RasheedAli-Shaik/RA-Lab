@@ -1,15 +1,3 @@
-/**
- * FileManager
- *
- * Handles transient document storage for the current editing session.
- * Provides CRUD-like operations on .tex files stored under
- * `workspace/documents/` and serves the compiled PDF from
- * `workspace/output/`.
- *
- * Designed to leave room for a future FastAPI service that may
- * read, rewrite, or patch the file via the same REST surface.
- */
-
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -18,20 +6,15 @@ const DOCUMENTS_DIR = path.join(WORKSPACE_DIR, 'documents');
 const OUTPUT_DIR = path.join(WORKSPACE_DIR, 'output');
 
 class FileManager {
-  /* ------------------------------------------------------------------ */
-  /*  Initialisation                                                    */
-  /* ------------------------------------------------------------------ */
-
+  /*  Initialisation */
   /** Create workspace directories if they do not already exist. */
   async initializeWorkspace() {
     await fs.mkdir(DOCUMENTS_DIR, { recursive: true });
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Document CRUD                                                     */
-  /* ------------------------------------------------------------------ */
 
+  /*  Document CRUD  */
   /**
    * Save (create / overwrite) a .tex document.
    *
@@ -120,14 +103,9 @@ class FileManager {
     }
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Patch (for future FastAPI integration)                            */
-  /* ------------------------------------------------------------------ */
 
+  /*  Patch (for future FastAPI integration)                            */
   /**
-   * Apply a find-and-replace patch to a document.
-   * The future FastAPI coding-agent service will call this endpoint
-   * to make targeted edits to the LaTeX source.
    *
    * @param {string} filename
    * @param {string} find    - Exact substring to locate
@@ -147,14 +125,9 @@ class FileManager {
     return { patched: true, filename: this._sanitizeFilename(filename) };
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  PDF output                                                        */
-  /* ------------------------------------------------------------------ */
+ 
+  /*  PDF output  */
 
-  /**
-   * Return the absolute path to the most recently compiled PDF,
-   * or null if no PDF has been generated yet.
-   */
   async getCompiledPdfPath() {
     const pdfPath = path.join(OUTPUT_DIR, 'document.pdf');
     try {
@@ -165,13 +138,9 @@ class FileManager {
     }
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Helpers                                                           */
-  /* ------------------------------------------------------------------ */
+  /*  Helpers  */
 
   /**
-   * Sanitise a filename to prevent path traversal and dangerous chars.
-   * Always ensures a .tex extension.
    *
    * @param {string} filename
    * @returns {string}
