@@ -196,10 +196,6 @@ Powered by **Google Gemini 2.0 Flash** through a dedicated FastAPI service:
 
 ---
 
-## 📷 Screenshots
-
-> *After cloning and running, navigate to `http://localhost:5173` to see the full IDE.*
-
 **Main IDE View** — Editor (left), PDF Preview (right), Panels (bottom)
 
 | Editor + PDF | AI Agent Panel | Compilation Log |
