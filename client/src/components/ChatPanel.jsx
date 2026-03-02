@@ -1,21 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Bot, User, Cpu, Activity } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Zap, Activity } from 'lucide-react';
 
 function extractEdits(text) {
   const edits = [];
-  const regex = /<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\n?([\s\S]*?)<<<REPLACE>>>\n?([\s\S]*?)<<<END_EDIT>>>/g;
+  // Revised regex to be more tolerant of whitespace around tags
+  const regex = /<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\s*([\s\S]*?)<<<REPLACE>>>\s*([\s\S]*?)<<<END_EDIT>>>/g;
   let match;
   while ((match = regex.exec(text)) !== null) {
-    edits.push({ find: match[1].replace(/\n$/, ''), replace: match[2].replace(/\n$/, '') });
+    edits.push({ find: match[1].trim(), replace: match[2].trim() });
   }
   return edits;
 }
 function extractLatexBlock(text) {
-  const match = text.match(/\\\latex\n([\s\S]*?)\\\/);
+  // Try to match standard markdown code blocks for LaTeX or TeX
+  const match = text.match(/```(?:latex|tex)\n([\s\S]*?)```/);
   return match ? match[1].trim() : null;
 }
 function getCleanText(text) {
-  return text.replace(/<<<SUGGESTED_EDIT>>>[\s\S]*?<<<END_EDIT>>>/g, '').replace(/\\\latex\n[\s\S]*?\\\/g, '').trim();
+  // Remove edit blocks and code blocks from the displayed message
+  let clean = text.replace(/<<<SUGGESTED_EDIT>>>[\s\S]*?<<<END_EDIT>>>/g, '');
+  // Optional: Remove the code block if it was used to replace content, 
+  // or keep it if you want the user to see it. 
+  // For now, let's keep it in the chat bubble as reference.
+  return clean.trim();
 }
 
 export default function ChatPanel({ code, logs, onApplyEdits, onSetCode }) {
@@ -40,7 +47,7 @@ export default function ChatPanel({ code, logs, onApplyEdits, onSetCode }) {
 
     try {
       const history = messages
-        .filter(m => m.role !== 'system')
+        .filter(m => m.role === 'user' || m.role === 'assistant')
         .map(m => ({ role: m.role, content: m.content }));
       history.push({ role: 'user', content: sentText });
 
@@ -67,83 +74,124 @@ export default function ChatPanel({ code, logs, onApplyEdits, onSetCode }) {
         generatedNew = true;
       }
 
-      let finalText = cleanText;
-      if (appliedCount) finalText += \\n\n[ACTION] Auto-patched \ segment(s).\;
-      if (generatedNew) finalText += \\n\n[ACTION] Re-generated entire document.\;
+      let finalMessages = [];
+      if (cleanText) finalMessages.push(cleanText);
 
-      setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
+      // Append Action Reports
+      if (appliedCount) {
+         setMessages(prev => [...prev, { role: 'assistant', content: cleanText }, { role: 'system', content: `Checking diffs... Patch successfully applied to ${appliedCount} segment(s).` }]);
+      } else if (generatedNew) {
+         setMessages(prev => [...prev, { role: 'assistant', content: cleanText }, { role: 'system', content: "Generated new document structure." }]);
+      } else {
+         setMessages(prev => [...prev, { role: 'assistant', content: cleanText }]);
+      }
+
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'error', content: "Connection failure." }]);
+      setMessages(prev => [...prev, { role: 'error', content: "Network layer interruption. Agent unreachable." }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-950/40 relative font-sans text-xs">
+    <div className="h-full flex flex-col relative font-sans text-xs">
       <div className="flex-1 overflow-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-violet-500/20">
+        
+        {/* Welcome State */}
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full opacity-60">
-             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/20 animate-float">
-                <Bot className="w-8 h-8 text-white" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+             <div className="relative">
+                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(124,58,237,0.3)] animate-float">
+                    <Bot className="w-10 h-10 text-white" />
+                 </div>
+                 <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#0f172a] rounded-lg flex items-center justify-center border border-white/10">
+                    <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+                 </div>
              </div>
-             <p className="text-sm font-medium text-slate-300">AI Assistant Online</p>
-             <p className="text-xs text-slate-500 mt-2 max-w-[200px] text-center">Ready to analyze, refactor, and generate LaTeX code.</p>
+             <p className="text-base font-bold text-slate-200 tracking-tight">AI Assistant Online</p>
+             <p className="text-[11px] text-slate-500 mt-2 max-w-[200px] text-center leading-relaxed">
+                Neural network ready for analysis. Describe your intent or paste errors.
+             </p>
           </div>
         )}
 
+        {/* Messages */}
         {messages.map((msg, i) => (
-          <div key={i} className={\lex gap-3 \\}>
+          <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''} animate-slide-in-right`}>
+            
             {/* Avatar */}
-            <div className={\w-8 h-8 rounded-lg flex items-center justify-center shrink-0 \\}>
-              {msg.role === 'user' ? <User className="w-4 h-4 text-slate-300" /> : 
-               msg.role === 'error' ? <Activity className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-            </div>
+            {msg.role !== 'system' && (
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border 
+                    ${msg.role === 'user' ? 'bg-slate-800 border-slate-700' : 'bg-violet-600/10 border-violet-500/20'}
+                `}>
+                {msg.role === 'user' ? <User className="w-4 h-4 text-slate-400" /> : 
+                msg.role === 'error' ? <Activity className="w-4 h-4 text-red-500" /> : <Bot className="w-4 h-4 text-violet-400" />}
+                </div>
+            )}
 
             {/* Bubble */}
-            <div className={\
-              max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm
-              \
-            \}>
-               <div className="whitespace-pre-wrap">{msg.content}</div>
+            <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {msg.role === 'system' ? (
+                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 w-full animate-pulse-subtle">
+                        <Zap className="w-3 h-3" />
+                        <span className="font-mono font-bold tracking-tight">{msg.content}</span>
+                     </div>
+                ) : (
+                    <>
+                        <div className={`
+                            px-4 py-3 rounded-2xl shadow-sm text-[13px] leading-relaxed whitespace-pre-wrap
+                            ${msg.role === 'user' 
+                                ? 'bg-slate-800 text-slate-200 rounded-tr-none' 
+                                : msg.role === 'error' 
+                                ? 'bg-red-500/10 border border-red-500/20 text-red-200'
+                                : 'bg-white/5 border border-white/5 text-slate-300 rounded-tl-none backdrop-blur-md'}
+                        `}>
+                            {msg.content}
+                        </div>
+                        {msg.role === 'assistant' && (
+                            <span className="text-[10px] text-slate-600 pl-1">Just now</span>
+                        )}
+                    </>
+                )}
             </div>
           </div>
         ))}
-
+        
+        {/* Loading Indicator */}
         {loading && (
-          <div className="flex gap-3">
-             <div className="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center shrink-0">
-                <Cpu className="w-4 h-4 text-violet-400 animate-pulse" />
+             <div className="flex gap-4 animate-fade-in">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border bg-violet-600/10 border-violet-500/20">
+                     <Bot className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex items-center gap-1 h-8">
+                     <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce [animation-delay:-0.3s]"></div>
+                     <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce [animation-delay:-0.15s]"></div>
+                     <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce"></div>
+                </div>
              </div>
-             <div className="flex items-center gap-1 h-8">
-                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce delay-75"></span>
-                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce delay-150"></span>
-             </div>
-          </div>
         )}
+
         <div ref={bottomRef} />
       </div>
 
       {/* Input Area */}
-      <div className="p-3 border-t border-white/5 bg-slate-900/50 backdrop-blur-xl">
-        <form 
-          onSubmit={sendMessage} 
-          className="relative flex items-center gap-2 bg-slate-950/50 border border-white/10 rounded-xl px-2 py-2 focus-within:border-violet-500/50 focus-within:ring-1 focus-within:ring-violet-500/20 transition-all"
-        >
-           <input 
-             value={input}
-             onChange={e => setInput(e.target.value)}
-             placeholder="Ask the AI to refactor, debug or generate..."
-             className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-200 placeholder:text-slate-600 px-2 font-medium"
-           />
-           <button 
-             type="submit" 
-             disabled={loading || !input.trim()}
-             className="p-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:hover:bg-violet-600 transition-colors shadow-lg shadow-violet-600/20"
-           >
-              <Send className="w-4 h-4" />
-           </button>
+      <div className="p-3 bg-black/20 shrink-0 border-t border-white/5 backdrop-blur-xl">
+        <form onSubmit={sendMessage} className="relative group">
+           <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-xl opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
+           <div className="relative flex items-center bg-[#0a0a15] rounded-xl border border-white/10 overflow-hidden">
+                <input
+                    className="flex-1 bg-transparent px-4 py-3 text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                    placeholder="Ask AI to modify code..."
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                />
+                <button
+                    disabled={!input.trim() || loading}
+                    className="p-2 mr-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                >
+                    <Send className="w-4 h-4" />
+                </button>
+           </div>
         </form>
       </div>
     </div>

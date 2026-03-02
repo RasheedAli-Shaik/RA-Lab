@@ -1,87 +1,41 @@
-import React, { useRef, useEffect } from 'react';
-import {
-  Terminal,
-  Activity,
-  AlertOctagon,
-  CheckCircle2,
-  XOctagon,
-  Cpu
-} from 'lucide-react';
+import React from 'react';
+import { Info } from 'lucide-react';
 
-export default function LogPanel({ logs, errors = [], warnings = [] }) {
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [logs]);
-
+export default function LogPanel({ logs, errors, warnings }) {
   return (
-    <div className="h-full flex flex-col bg-slate-950/40 text-xs font-mono">
-      {/* Logs Display */}
-      <div 
-        ref={scrollRef} 
-        className="flex-1 overflow-auto p-4 scrollbar-thin scrollbar-thumb-slate-700/20 scrollbar-track-transparent space-y-1"
-      >
-        {logs ? (
-            logs.split('\n').map((line, idx) => (
-              <LogLine key={idx} line={line} />
-            ))
-        ) : (
-            <div className="h-full flex flex-col items-center justify-center opacity-20">
-                <Cpu className="w-12 h-12 mb-4 text-slate-400" />
-                <p className="text-slate-400 tracking-widest">SYSTEM IDLE</p>
-            </div>
-        )}
-      </div>
+    <div className="h-full bg-[#050510]/95 font-mono text-xs overflow-auto p-4 scrollbar-thin relative group">
+      {/* Matrix rain effect simplified */}
+      <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(32,255,100,.03)_25%,rgba(32,255,100,.03)_26%,transparent_27%,transparent_74%,rgba(32,255,100,.03)_75%,rgba(32,255,100,.03)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(32,255,100,.03)_25%,rgba(32,255,100,.03)_26%,transparent_27%,transparent_74%,rgba(32,255,100,.03)_75%,rgba(32,255,100,.03)_76%,transparent_77%,transparent)] bg-[length:50px_50px] pointer-events-none opacity-20"></div>
 
-      {/* Diagnostics Footer */}
-      {(errors.length > 0 || warnings.length > 0) && (
-        <div className="border-t border-red-500/20 bg-red-950/10 p-2 flex gap-4 shrink-0 backdrop-blur-sm relative overflow-hidden">
-           <div className="absolute inset-0 bg-red-500/5 animate-pulse"></div>
-           
-           {errors.length > 0 && (
-            <div className="flex items-center gap-2 text-red-400 relative z-10">
-              <XOctagon className="w-3.5 h-3.5" />
-              <span className="font-bold">{errors.length} CRITICAL</span>
-            </div>
-           )}
-           
-           {warnings.length > 0 && (
-            <div className="flex items-center gap-2 text-amber-400 relative z-10">
-              <AlertOctagon className="w-3.5 h-3.5" />
-              <span className="font-medium">{warnings.length} warning(s)</span>
-            </div>
-           )}
+      {logs ? (
+        <div className="space-y-1 relative z-10">
+          {logs.split('\n').map((line, idx) => {
+            if (!line.trim()) return null;
+            
+            // Heuristic coloring
+            let colorClass = 'text-slate-400';
+            if (line.match(/error/i) || line.match(/!/)) {
+                colorClass = 'text-red-400 bg-red-500/5 px-2 py-0.5 -mx-2 rounded border-l-2 border-red-500';
+            } else if (line.match(/warning/i)) {
+                colorClass = 'text-yellow-400';
+            } else if (line.match(/success/i) || line.match(/done/i)) {
+                colorClass = 'text-green-400';
+            }
+
+            return (
+              <div key={idx} className={`${colorClass} whitespace-pre-wrap break-all leading-5 flex items-start gap-2`}>
+                 <span className="opacity-30 select-none mr-2">{idx + 1}</span>
+                 {line}
+              </div>
+            );
+          })}
         </div>
-      )}
-      
-      {errors.length === 0 && warnings.length === 0 && logs && (
-         <div className="border-t border-emerald-500/20 bg-emerald-950/10 p-2 flex gap-2 items-center text-emerald-400 shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span className="tracking-wide text-[10px] font-bold uppercase">System Nominal</span>
-         </div>
+      ) : (
+        <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50 relative z-10">
+          <Info className="w-8 h-8 mb-2" />
+          <p>System buffers empty</p>
+        </div>
       )}
     </div>
   );
-}
-
-function LogLine({ line }) {
-  if (!line.trim()) return null;
-  const lower = line.toLowerCase();
-
-  let className = "text-slate-400 border-l-2 border-transparent pl-2 opacity-80 hover:opacity-100 transition-opacity";
-  
-  if (lower.includes('error') || lower.includes('!')) {
-    className = "text-red-400 border-l-2 border-red-500 pl-2 bg-red-500/5 py-0.5";
-  } else if (lower.includes('warning')) {
-    className = "text-amber-400 border-l-2 border-amber-500 pl-2";
-  } else if (lower.includes('success') || lower.includes('complete')) {
-    className = "text-emerald-400 border-l-2 border-emerald-500 pl-2";
-  } else if (lower.includes('compile') || lower.includes('running')) {
-    className = "text-cyan-400 border-l-2 border-cyan-500 pl-2";
-  }
-
-  return <div className={\ont-mono whitespace-pre-wrap \\}>{line}</div>;
 }

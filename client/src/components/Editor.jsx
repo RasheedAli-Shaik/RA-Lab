@@ -3,7 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { StreamLanguage } from '@codemirror/language';
 import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Code2, Hash, FileCode } from 'lucide-react';
+import { FileCode } from 'lucide-react';
 import { EditorView } from '@codemirror/view';
 
 // Custom aesthetic theme for CodeMirror

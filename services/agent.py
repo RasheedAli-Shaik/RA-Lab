@@ -25,7 +25,7 @@ from prompts import AGENT_SYSTEM_PROMPT, MODE_PROMPTS
 
 # ── Edit-block parser ──────────────────────────────────────────────
 _EDIT_RE = re.compile(
-    r"<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\n?([\s\S]*?)<<<REPLACE>>>\n?([\s\S]*?)<<<END_EDIT>>>",
+    r"<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\s*([\s\S]*?)<<<REPLACE>>>\s*([\s\S]*?)<<<END_EDIT>>>",
     re.MULTILINE,
 )
 
@@ -34,8 +34,8 @@ def parse_edits(text: str) -> list[SuggestedEdit]:
     """Extract structured edits from a model response string."""
     edits: list[SuggestedEdit] = []
     for m in _EDIT_RE.finditer(text):
-        find = m.group(1).rstrip("\n")
-        replace = m.group(2).rstrip("\n")
+        find = m.group(1).strip()
+        replace = m.group(2).strip()
         edits.append(SuggestedEdit(find=find, replace=replace))
     return edits
 

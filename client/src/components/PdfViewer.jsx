@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Loader2, Maximize2, RefreshCw } from 'lucide-react';
+import { Eye, Maximize2, RefreshCw } from 'lucide-react';
 
 export default function PdfViewer({ pdfUrl, isCompiling }) {
   return (
@@ -40,7 +40,7 @@ export default function PdfViewer({ pdfUrl, isCompiling }) {
              <div className="absolute -inset-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-sm pointer-events-none"></div>
              
              <iframe
-               src={\\#toolbar=0&navpanes=0&scrollbar=0&view=FitH\}
+               src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                className="w-full h-full bg-white relative z-10"
                title="PDF Preview"
              />
