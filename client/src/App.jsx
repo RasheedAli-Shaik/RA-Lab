@@ -1,14 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Toaster, toast } from 'react-hot-toast';
-import { Terminal, Sparkles, Zap } from 'lucide-react';
+import { Terminal, Sparkles } from 'lucide-react';
 
 import Toolbar from './components/Toolbar';
 import Editor from './components/Editor';
 import PdfViewer from './components/PdfViewer';
 import LogPanel from './components/LogPanel';
-import AIHelper from './components/AIHelper';
-import AgentPanel from './components/AgentPanel';
+import ChatPanel from './components/ChatPanel';
 import StatusBar from './components/StatusBar';
 
 const DEFAULT_TEMPLATE = `\\documentclass{article}
@@ -87,8 +86,6 @@ export default function App() {
   const [compilationStatus, setCompilationStatus] = useState('idle'); // idle | compiling | success | error
   const [cursorPosition, setCursorPosition] = useState({ line: 1, col: 1 });
   const [activeBottomTab, setActiveBottomTab] = useState('logs');
-  const [aiMessages, setAiMessages] = useState([]);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Compile 
   const handleCompile = useCallback(async () => {
@@ -157,61 +154,19 @@ export default function App() {
     }
   }, [code, fileName, isSaving]);
 
-  // AI query (routing through FastAPI agent) 
-  const handleAIQuery = useCallback(
-    async (query) => {
-      setIsAiLoading(true);
-      setAiMessages((prev) => [...prev, { role: 'user', content: query }]);
-
-      try {
-        // Build conversation history for multi-turn chat
-        const history = aiMessages
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
-          .map((m) => ({ role: m.role, content: m.content }));
-        history.push({ role: 'user', content: query });
-
-        const res = await fetch('/api/agent/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: history,
-            code: code || undefined,
-            logs: compilationLogs || undefined,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data?.error?.message || data?.detail || 'AI request failed');
+  // Apply an array of edits from the AI to the editor in one go
+  const applyEdits = useCallback(
+    (edits) => {
+      let current = code;
+      let applied = 0;
+      for (const edit of edits) {
+        if (current.includes(edit.find)) {
+          current = current.replace(edit.find, edit.replace);
+          applied++;
         }
-
-        setAiMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: data.response },
-        ]);
-      } catch (err) {
-        setAiMessages((prev) => [
-          ...prev,
-          { role: 'error', content: err.message },
-        ]);
-      } finally {
-        setIsAiLoading(false);
       }
-    },
-    [compilationLogs, code, aiMessages]
-  );
-
-  // Apply AI-suggested edit to the editor 
-  const handleApplyEdit = useCallback(
-    (find, replace) => {
-      if (!code.includes(find)) {
-        toast.error('Edit failed: pattern not found in current code.');
-        return false;
-      }
-      setCode(code.replace(find, replace));
-      toast.success('Edit applied to editor.');
-      return true;
+      if (applied > 0) setCode(current);
+      return applied;
     },
     [code]
   );
@@ -292,16 +247,10 @@ export default function App() {
                 badgeColor="red"
               />
               <TabButton
-                active={activeBottomTab === 'ai'}
-                onClick={() => setActiveBottomTab('ai')}
+                active={activeBottomTab === 'chat'}
+                onClick={() => setActiveBottomTab('chat')}
                 icon={<Sparkles className="w-3.5 h-3.5" />}
-                label="AI Helper"
-              />
-              <TabButton
-                active={activeBottomTab === 'agent'}
-                onClick={() => setActiveBottomTab('agent')}
-                icon={<Zap className="w-3.5 h-3.5" />}
-                label="Agent"
+                label="AI Chat"
               />
             </div>
 
@@ -314,19 +263,12 @@ export default function App() {
                   warnings={compilationWarnings}
                 />
               )}
-              {activeBottomTab === 'ai' && (
-                <AIHelper
-                  messages={aiMessages}
-                  onSendQuery={handleAIQuery}
-                  onApplyEdit={handleApplyEdit}
-                  isLoading={isAiLoading}
-                />
-              )}
-              {activeBottomTab === 'agent' && (
-                <AgentPanel
+              {activeBottomTab === 'chat' && (
+                <ChatPanel
                   code={code}
                   logs={compilationLogs}
-                  onApplyEdit={handleApplyEdit}
+                  onApplyEdits={applyEdits}
+                  onSetCode={setCode}
                 />
               )}
             </div>
