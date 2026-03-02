@@ -2,10 +2,11 @@ import React from 'react';
 import {
   Play,
   Save,
-  Download,
-  FileText,
+  Rocket,
+  FileCode,
   Loader2,
-  Keyboard,
+  Box,
+  ChevronRight
 } from 'lucide-react';
 
 export default function Toolbar({
@@ -15,178 +16,90 @@ export default function Toolbar({
   onSave,
   isCompiling,
   isSaving,
-  pdfUrl,
-  compilationStatus,
 }) {
-  const handleDownloadPdf = async () => {
-    try {
-      const res = await fetch('/api/document/pdf');
-      if (!res.ok) throw new Error('No PDF available');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName.replace(/\.tex$/, '.pdf') || 'document.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      // Silently fail — button is only shown when pdfUrl exists
-    }
-  };
-
   return (
-    <header className="h-12 bg-slate-900 border-b border-slate-700/60 flex items-center px-4 gap-2 shrink-0 select-none">
-      {/* ── Brand ── */}
-      <div className="flex items-center gap-2 mr-3">
-        <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
-          <FileText className="w-4 h-4 text-white" strokeWidth={2.5} />
+    <div className="glass-panel w-full h-16 rounded-2xl flex items-center px-6 justify-between border-white/5 relative overflow-hidden group">
+      
+      {/* Background Ambient Glow */}
+      <div className="absolute top-0 left-1/4 w-1/2 h-full bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+
+      {/* Left: Brand & File */}
+      <div className="flex items-center gap-6 relative z-10">
+        <div className="flex items-center gap-3 group/brand">
+            <div className="relative">
+                <div className="absolute inset-0 bg-cyan-500 blur-md opacity-20 group-hover/brand:opacity-40 transition-opacity"></div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 relative z-10 border border-white/10">
+                    <FileCode className="w-5 h-5 text-white" />
+                </div>
+            </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg tracking-tight text-white leading-none font-sans">
+              RA-LAB
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-cyan-300 font-medium opacity-80">
+              Workspace
+            </span>
+          </div>
         </div>
-        <span className="font-bold text-base tracking-tight text-white hidden sm:inline">
-          RA-<span className="text-blue-400">Lab</span>
-        </span>
+
+        <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
+
+        <div className="flex items-center gap-2 group/input">
+          <span className="text-slate-500 text-sm font-mono opacity-50 select-none">./</span>
+          <input
+            type="text"
+            value={fileName}
+            onChange={(e) => onFileNameChange(e.target.value)}
+            className="
+              bg-transparent text-starlight text-sm font-mono font-medium
+              focus:outline-none focus:text-cyan-300 w-48 transition-colors
+              placeholder:text-slate-600
+            "
+          />
+          <span className="text-[10px] text-slate-500 border border-slate-700/50 rounded px-1.5 py-0.5 opacity-0 group-hover/input:opacity-100 transition-opacity">
+            EDIT
+          </span>
+        </div>
       </div>
 
-      <Separator />
-
-      {/* ── File name ── */}
-      <input
-        type="text"
-        value={fileName}
-        onChange={(e) => onFileNameChange(e.target.value)}
-        spellCheck={false}
-        className="
-          bg-slate-800/60 text-slate-200 text-sm font-mono px-2.5 py-1 rounded
-          border border-slate-600/60 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30
-          focus:outline-none w-36 sm:w-44 transition-colors
-        "
-      />
-
-      <Separator />
-
-      {/* ── Save .tex to server ── */}
-      <ToolbarButton
-        onClick={onSave}
-        disabled={isSaving}
-        icon={
-          isSaving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )
-        }
-        label="Save .tex"
-        shortcut="Ctrl+S"
-      />
-
-      {/* ── Compile ── */}
-      <button
-        onClick={onCompile}
-        disabled={isCompiling}
-        className="
-          flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded
-          bg-blue-600 hover:bg-blue-700 active:bg-blue-800
-          text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-        "
-        title="Compile (Ctrl+Enter)"
-      >
-        {isCompiling ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <Play className="w-4 h-4" fill="currentColor" />
-        )}
-        {isCompiling ? 'Compiling…' : 'Compile'}
-      </button>
-
-      {/* ── Download PDF (separate from Save .tex) ── */}
-      {pdfUrl && (
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3 relative z-10">
         <button
-          onClick={handleDownloadPdf}
-          className="
-            flex items-center gap-1.5 px-3 py-1.5 text-sm rounded
-            bg-slate-800 hover:bg-slate-700 text-slate-200
-            transition-colors
-          "
-          title="Download compiled PDF to your computer"
+          onClick={onSave}
+          disabled={isSaving}
+          className="group relative px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 transition-all outline-none overflow-hidden"
         >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Download PDF</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+          {isSaving ? (
+             <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
+          ) : (
+             <span className="flex items-center gap-2 text-sm font-medium text-slate-300 group-hover:text-white">
+               <Save className="w-4 h-4" />
+               <span>Save Disc</span>
+             </span>
+          )}
         </button>
-      )}
 
-      {/* ── Spacer ── */}
-      <div className="flex-1" />
-
-      {/* ── Compilation status pill ── */}
-      <StatusPill status={compilationStatus} />
-
-      {/* ── Keyboard hint ── */}
-      <div className="hidden md:flex items-center gap-1 text-[11px] text-slate-500 ml-2">
-        <Keyboard className="w-3.5 h-3.5" />
-        <span>Ctrl+↵ Compile</span>
+        <button
+          onClick={onCompile}
+          disabled={isCompiling}
+          className="group relative px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border border-cyan-400/30 flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] active:scale-95 transition-all duration-300"
+        >
+          {isCompiling ? (
+            <>
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+              <span className="text-sm font-bold text-white tracking-wide">COMPILING</span>
+            </>
+          ) : (
+            <>
+              <Rocket className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-300" />
+              <span className="text-sm font-bold text-white tracking-wide">COMPILE</span>
+              <div className="w-px h-3 bg-white/20 mx-1"></div>
+              <ChevronRight className="w-3 h-3 text-white/70" />
+            </>
+          )}
+        </button>
       </div>
-    </header>
-  );
-}
-
-/* Small internal components */
-
-function Separator() {
-  return <div className="h-5 w-px bg-slate-700/60 mx-1" />;
-}
-
-function ToolbarButton({ onClick, disabled, icon, label, shortcut }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="
-        flex items-center gap-1.5 px-3 py-1.5 text-sm rounded
-        bg-slate-800 hover:bg-slate-700 active:bg-slate-600
-        text-slate-200 transition-colors
-        disabled:opacity-50 disabled:cursor-not-allowed
-      "
-      title={shortcut ? `${label} (${shortcut})` : label}
-    >
-      {icon}
-      <span className="hidden sm:inline">{label}</span>
-    </button>
-  );
-}
-
-function StatusPill({ status }) {
-  if (status === 'idle') return null;
-
-  const config = {
-    compiling: {
-      bg: 'bg-blue-500/15',
-      text: 'text-blue-400',
-      dot: 'bg-blue-400 animate-pulse',
-      label: 'Compiling',
-    },
-    success: {
-      bg: 'bg-emerald-500/15',
-      text: 'text-emerald-400',
-      dot: 'bg-emerald-400',
-      label: 'Compiled',
-    },
-    error: {
-      bg: 'bg-red-500/15',
-      text: 'text-red-400',
-      dot: 'bg-red-400',
-      label: 'Errors',
-    },
-  }[status];
-
-  if (!config) return null;
-
-  return (
-    <span
-      className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${config.bg} ${config.text}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      {config.label}
-    </span>
+    </div>
   );
 }

@@ -1,33 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, User, AlertCircle, Sparkles } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Cpu, Activity } from 'lucide-react';
 
-// Pull out all <<<SUGGESTED_EDIT>>> blocks from the AI response
 function extractEdits(text) {
   const edits = [];
-  const regex =
-    /<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\n?([\s\S]*?)<<<REPLACE>>>\n?([\s\S]*?)<<<END_EDIT>>>/g;
+  const regex = /<<<SUGGESTED_EDIT>>>\s*<<<FIND>>>\n?([\s\S]*?)<<<REPLACE>>>\n?([\s\S]*?)<<<END_EDIT>>>/g;
   let match;
   while ((match = regex.exec(text)) !== null) {
-    edits.push({
-      find: match[1].replace(/\n$/, ''),
-      replace: match[2].replace(/\n$/, ''),
-    });
+    edits.push({ find: match[1].replace(/\n$/, ''), replace: match[2].replace(/\n$/, '') });
   }
   return edits;
 }
-
-// Pull out a ```latex ... ``` block (for full new-document generation)
 function extractLatexBlock(text) {
-  const match = text.match(/```latex\n([\s\S]*?)```/);
+  const match = text.match(/\\\latex\n([\s\S]*?)\\\/);
   return match ? match[1].trim() : null;
 }
-
-// Strip edit blocks and latex code blocks so chat text is clean
 function getCleanText(text) {
-  return text
-    .replace(/<<<SUGGESTED_EDIT>>>[\s\S]*?<<<END_EDIT>>>/g, '')
-    .replace(/```latex\n[\s\S]*?```/g, '')
-    .trim();
+  return text.replace(/<<<SUGGESTED_EDIT>>>[\s\S]*?<<<END_EDIT>>>/g, '').replace(/\\\latex\n[\s\S]*?\\\/g, '').trim();
 }
 
 export default function ChatPanel({ code, logs, onApplyEdits, onSetCode }) {
@@ -36,203 +24,128 @@ export default function ChatPanel({ code, logs, onApplyEdits, onSetCode }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  // Auto-scroll to the latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
+    if (!input.trim() || loading) return;
+    
+    // Optimistic UI
+    const sentText = input.trim();
     setInput('');
-
-    // Add the user's message to the chat
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    setMessages(prev => [...prev, { role: 'user', content: sentText }]);
     setLoading(true);
 
     try {
-      // Build conversation history for the API
       const history = messages
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .map((m) => ({ role: m.role, content: m.content }));
-      history.push({ role: 'user', content: text });
+        .filter(m => m.role !== 'system')
+        .map(m => ({ role: m.role, content: m.content }));
+      history.push({ role: 'user', content: sentText });
 
-      // Send to the FastAPI agent through the Node proxy
       const res = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: history,
-          code: code || undefined,
-          logs: logs || undefined,
-        }),
+        body: JSON.stringify({ messages: history, code: code || undefined, logs: logs || undefined }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(
-          data?.error?.message || data?.detail || 'Request failed'
-        );
-      }
+      
+      if (!res.ok) throw new Error(data?.error || 'Failed');
 
       const fullResponse = data.response;
-
-      // Parse what the AI returned
       const edits = extractEdits(fullResponse);
       const latexBlock = extractLatexBlock(fullResponse);
       const cleanText = getCleanText(fullResponse);
-
-      // Auto-apply: edits to existing code, or load a brand-new document
+      
       let appliedCount = 0;
       let generatedNew = false;
 
-      if (edits.length > 0) {
-        appliedCount = onApplyEdits(edits);
-      } else if (latexBlock) {
+      if (edits.length > 0) appliedCount = onApplyEdits(edits);
+      else if (latexBlock) {
         onSetCode(latexBlock);
         generatedNew = true;
       }
 
-      // Build the chat message the user will see
-      let displayText = cleanText;
-      if (appliedCount > 0) {
-        const s = appliedCount === 1 ? '' : 's';
-        displayText += `\n\n✅ Applied ${appliedCount} edit${s} to your document.`;
-      }
-      if (generatedNew) {
-        displayText += '\n\n✅ New document loaded into the editor.';
-      }
+      let finalText = cleanText;
+      if (appliedCount) finalText += \\n\n[ACTION] Auto-patched \ segment(s).\;
+      if (generatedNew) finalText += \\n\n[ACTION] Re-generated entire document.\;
 
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: displayText || 'Done!' },
-      ]);
+      setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'error', content: err.message },
-      ]);
+      setMessages(prev => [...prev, { role: 'error', content: "Connection failure." }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-auto p-3 space-y-3 scrollbar-thin">
-        {messages.length === 0 && <EmptyState />}
-
-        {messages.map((msg, i) => (
-          <Message key={i} msg={msg} />
-        ))}
-
-        {loading && (
-          <div className="flex gap-2">
-            <Avatar role="assistant" />
-            <div className="bg-slate-800/50 rounded-lg px-3 py-2 text-sm text-slate-400 flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
-              Thinking…
-            </div>
+    <div className="h-full flex flex-col bg-slate-950/40 relative font-sans text-xs">
+      <div className="flex-1 overflow-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-violet-500/20">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full opacity-60">
+             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/20 animate-float">
+                <Bot className="w-8 h-8 text-white" />
+             </div>
+             <p className="text-sm font-medium text-slate-300">AI Assistant Online</p>
+             <p className="text-xs text-slate-500 mt-2 max-w-[200px] text-center">Ready to analyze, refactor, and generate LaTeX code.</p>
           </div>
         )}
 
+        {messages.map((msg, i) => (
+          <div key={i} className={\lex gap-3 \\}>
+            {/* Avatar */}
+            <div className={\w-8 h-8 rounded-lg flex items-center justify-center shrink-0 \\}>
+              {msg.role === 'user' ? <User className="w-4 h-4 text-slate-300" /> : 
+               msg.role === 'error' ? <Activity className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            </div>
+
+            {/* Bubble */}
+            <div className={\
+              max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm
+              \
+            \}>
+               <div className="whitespace-pre-wrap">{msg.content}</div>
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex gap-3">
+             <div className="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center shrink-0">
+                <Cpu className="w-4 h-4 text-violet-400 animate-pulse" />
+             </div>
+             <div className="flex items-center gap-1 h-8">
+                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce delay-75"></span>
+                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce delay-150"></span>
+             </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <form
-        onSubmit={sendMessage}
-        className="border-t border-slate-700/60 p-2 flex gap-2 shrink-0 bg-slate-900/30"
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask anything — edit, explain, generate, fix…"
-          disabled={loading}
-          className="
-            flex-1 bg-slate-800/60 text-slate-200 text-sm px-3 py-2 rounded-lg
-            border border-slate-600/60 placeholder-slate-500
-            focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30
-            focus:outline-none disabled:opacity-50 transition-colors
-          "
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          title="Send"
+      {/* Input Area */}
+      <div className="p-3 border-t border-white/5 bg-slate-900/50 backdrop-blur-xl">
+        <form 
+          onSubmit={sendMessage} 
+          className="relative flex items-center gap-2 bg-slate-950/50 border border-white/10 rounded-xl px-2 py-2 focus-within:border-violet-500/50 focus-within:ring-1 focus-within:ring-violet-500/20 transition-all"
         >
-          <Send className="w-4 h-4" />
-        </button>
-      </form>
-    </div>
-  );
-}
-
-// Shown when the chat is empty
-function EmptyState() {
-  return (
-    <div className="h-full flex flex-col items-center justify-center text-slate-500">
-      <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3">
-        <Sparkles className="w-6 h-6 text-blue-400 opacity-60" />
+           <input 
+             value={input}
+             onChange={e => setInput(e.target.value)}
+             placeholder="Ask the AI to refactor, debug or generate..."
+             className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-200 placeholder:text-slate-600 px-2 font-medium"
+           />
+           <button 
+             type="submit" 
+             disabled={loading || !input.trim()}
+             className="p-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:hover:bg-violet-600 transition-colors shadow-lg shadow-violet-600/20"
+           >
+              <Send className="w-4 h-4" />
+           </button>
+        </form>
       </div>
-      <p className="text-sm font-medium text-slate-400">RA-Lab AI Assistant</p>
-      <p className="text-xs mt-1 text-center max-w-xs leading-relaxed">
-        Ask me to write, edit, fix, or explain your LaTeX document. I can read
-        your code and apply changes directly in the editor.
-      </p>
-    </div>
-  );
-}
-
-// A single chat bubble
-function Message({ msg }) {
-  const isUser = msg.role === 'user';
-  const isError = msg.role === 'error';
-
-  return (
-    <div className={`flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && <Avatar role={msg.role} />}
-      <div
-        className={`max-w-[85%] rounded-lg text-sm leading-relaxed px-3 py-2 ${
-          isUser
-            ? 'bg-blue-600 text-white rounded-br-sm'
-            : isError
-              ? 'bg-red-500/10 text-red-300 border border-red-500/20'
-              : 'bg-slate-800/70 text-slate-200 rounded-bl-sm'
-        }`}
-      >
-        <pre className="whitespace-pre-wrap font-sans text-[13px]">
-          {msg.content}
-        </pre>
-      </div>
-      {isUser && <Avatar role="user" />}
-    </div>
-  );
-}
-
-// Small avatar circle
-function Avatar({ role }) {
-  if (role === 'user') {
-    return (
-      <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-        <User className="w-3 h-3 text-blue-400" />
-      </div>
-    );
-  }
-  if (role === 'error') {
-    return (
-      <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">
-        <AlertCircle className="w-3 h-3 text-red-400" />
-      </div>
-    );
-  }
-  return (
-    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-      <Sparkles className="w-3 h-3 text-blue-400" />
     </div>
   );
 }

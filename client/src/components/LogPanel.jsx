@@ -1,16 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 import {
   Terminal,
-  AlertTriangle,
-  XCircle,
-  Info,
+  Activity,
+  AlertOctagon,
   CheckCircle2,
+  XOctagon,
+  Cpu
 } from 'lucide-react';
 
 export default function LogPanel({ logs, errors = [], warnings = [] }) {
   const scrollRef = useRef(null);
 
-  // Auto-scroll to bottom when logs change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -18,88 +18,70 @@ export default function LogPanel({ logs, errors = [], warnings = [] }) {
   }, [logs]);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Log output */}
-      <div ref={scrollRef} className="flex-1 overflow-auto p-3 scrollbar-thin">
+    <div className="h-full flex flex-col bg-slate-950/40 text-xs font-mono">
+      {/* Logs Display */}
+      <div 
+        ref={scrollRef} 
+        className="flex-1 overflow-auto p-4 scrollbar-thin scrollbar-thumb-slate-700/20 scrollbar-track-transparent space-y-1"
+      >
         {logs ? (
-          <div className="space-y-0">
-            {logs.split('\n').map((line, idx) => (
+            logs.split('\n').map((line, idx) => (
               <LogLine key={idx} line={line} />
-            ))}
-          </div>
+            ))
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-500">
-            <Terminal className="w-6 h-6 mb-2 opacity-40" />
-            <p className="text-sm">Compilation output will appear here</p>
-          </div>
+            <div className="h-full flex flex-col items-center justify-center opacity-20">
+                <Cpu className="w-12 h-12 mb-4 text-slate-400" />
+                <p className="text-slate-400 tracking-widest">SYSTEM IDLE</p>
+            </div>
         )}
       </div>
 
-      {/* Summary bar */}
+      {/* Diagnostics Footer */}
       {(errors.length > 0 || warnings.length > 0) && (
-        <div className="border-t border-slate-700/60 px-3 py-1.5 flex gap-4 text-xs bg-slate-900/50 shrink-0">
-          {errors.length > 0 && (
-            <span className="flex items-center gap-1 text-red-400">
-              <XCircle className="w-3 h-3" />
-              {errors.length} error{errors.length !== 1 ? 's' : ''}
-            </span>
-          )}
-          {warnings.length > 0 && (
-            <span className="flex items-center gap-1 text-amber-400">
-              <AlertTriangle className="w-3 h-3" />
-              {warnings.length} warning{warnings.length !== 1 ? 's' : ''}
-            </span>
-          )}
-          {errors.length === 0 && warnings.length === 0 && (
-            <span className="flex items-center gap-1 text-emerald-400">
-              <CheckCircle2 className="w-3 h-3" />
-              No issues
-            </span>
-          )}
+        <div className="border-t border-red-500/20 bg-red-950/10 p-2 flex gap-4 shrink-0 backdrop-blur-sm relative overflow-hidden">
+           <div className="absolute inset-0 bg-red-500/5 animate-pulse"></div>
+           
+           {errors.length > 0 && (
+            <div className="flex items-center gap-2 text-red-400 relative z-10">
+              <XOctagon className="w-3.5 h-3.5" />
+              <span className="font-bold">{errors.length} CRITICAL</span>
+            </div>
+           )}
+           
+           {warnings.length > 0 && (
+            <div className="flex items-center gap-2 text-amber-400 relative z-10">
+              <AlertOctagon className="w-3.5 h-3.5" />
+              <span className="font-medium">{warnings.length} warning(s)</span>
+            </div>
+           )}
         </div>
+      )}
+      
+      {errors.length === 0 && warnings.length === 0 && logs && (
+         <div className="border-t border-emerald-500/20 bg-emerald-950/10 p-2 flex gap-2 items-center text-emerald-400 shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="tracking-wide text-[10px] font-bold uppercase">System Nominal</span>
+         </div>
       )}
     </div>
   );
 }
 
-/* Individual log line colour coding  */
-
 function LogLine({ line }) {
   if (!line.trim()) return null;
-
-  let colorClass = 'text-slate-400';
-  let Icon = null;
-
   const lower = line.toLowerCase();
 
-  if (
-    lower.startsWith('error:') ||
-    lower.startsWith('error[') ||
-    lower.startsWith('! ') ||
-    lower.includes('fatal error')
-  ) {
-    colorClass = 'text-red-400';
-    Icon = XCircle;
-  } else if (
-    lower.startsWith('warning:') ||
-    lower.includes('latex warning') ||
-    lower.includes('overfull') ||
-    lower.includes('underfull')
-  ) {
-    colorClass = 'text-amber-400';
-    Icon = AlertTriangle;
-  } else if (
-    lower.startsWith('note:') ||
-    lower.includes('[info]')
-  ) {
-    colorClass = 'text-blue-400';
-    Icon = Info;
+  let className = "text-slate-400 border-l-2 border-transparent pl-2 opacity-80 hover:opacity-100 transition-opacity";
+  
+  if (lower.includes('error') || lower.includes('!')) {
+    className = "text-red-400 border-l-2 border-red-500 pl-2 bg-red-500/5 py-0.5";
+  } else if (lower.includes('warning')) {
+    className = "text-amber-400 border-l-2 border-amber-500 pl-2";
+  } else if (lower.includes('success') || lower.includes('complete')) {
+    className = "text-emerald-400 border-l-2 border-emerald-500 pl-2";
+  } else if (lower.includes('compile') || lower.includes('running')) {
+    className = "text-cyan-400 border-l-2 border-cyan-500 pl-2";
   }
 
-  return (
-    <div className={`${colorClass} font-mono text-xs leading-5 flex items-start gap-1`}>
-      {Icon && <Icon className="w-3 h-3 mt-0.5 flex-shrink-0" />}
-      <span className="whitespace-pre-wrap break-all">{line}</span>
-    </div>
-  );
+  return <div className={\ont-mono whitespace-pre-wrap \\}>{line}</div>;
 }
